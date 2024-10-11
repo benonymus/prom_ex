@@ -108,10 +108,13 @@ defmodule MyCoolApp.Application do
 
   def start(_type, _args) do
     children = [
-      MyAppWeb.Endpoint,
-      # PromEx should be started after the Endpoint, to avoid unnecessary error messages
+      # PromEx should be started before anything else as PromEx will caputre init events from
+      # libraries like Ecto, Phoenix and Oban. If it is started after those other supervision trees
+      # you will miss those events and metrics.
       MyCoolApp.PromEx,
 
+      MyCoolApp.Repo,
+      MyCoolApp.Endpoint
       ...
     ]
 
@@ -269,6 +272,9 @@ There are a couple of solutions to this problem:
 2. If your application is public facing, you can leverage the [Unplug](https://hex.pm/packages/unplug) library that I
    maintain in order to only execute the `PromEx.Plug` plug when the incoming request fulfills your configured
    requirements (see the [PromEx.Plug HexDocs](https://hexdocs.pm/prom_ex/1.1.1/PromEx.Plug.html) for an example).
+
+3. If Unplug doesn't suit your needs, you can invoke `PromEx.Plug`
+   [conditionally with your own logic](https://hexdocs.pm/plug/1.16.1/Plug.Builder.html#module-conditional-plugs).
 
 ## Performance Concerns
 
